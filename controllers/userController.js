@@ -198,7 +198,7 @@ class UserController {
 
 
 
-    res.render("userHomecenter.ejs",{result2,result,token});
+    res.render("userHomeCenter.ejs",{result2,result,token});
   }
   static userHomeStateDirect=async(req,res)=>{
     // user.
