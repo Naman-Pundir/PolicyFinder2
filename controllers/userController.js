@@ -6,7 +6,7 @@ import central_policyModel from '../models/central_policy.js'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import transporter from '../config/emailConfig.js'
-const currentDate = new Date();
+const  currentDate= new Date();
 
 class UserController {
   static userRegistration = async (req, res) => {
@@ -23,7 +23,8 @@ class UserController {
  var occupassion = req.body.occupation;
  var caste = req.body.caste;
  var family_income = req.body.income;  
-    var last_active = currentDate;
+    var last_active =  currentDate.toLocaleDateString('en-CA');
+
     const user = await UserModel.findOne({ email: email })
     if (user) {
       res.send({ "status": "failed", "message": "Email already exists" })
@@ -76,10 +77,9 @@ class UserController {
           const isMatch = await bcrypt.compare(password, user.person_password)
           if ((user.email === email) && isMatch) {
             // Generate JWT Token
-            var last_active = currentDate;
 
             const token = jwt.sign({ userID: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: '5d' })
-            await UserModel.findByIdAndUpdate(user._id, { $set: { last_active:last_active  } })
+           
 
             res.redirect( `userHomeCenter?token=${token}`);
           } else {
@@ -124,7 +124,7 @@ class UserController {
       if (user) {
         const secret = user._id + process.env.JWT_SECRET_KEY
         const token = jwt.sign({ userID: user._id }, secret, { expiresIn: '15m' })
-        const link = `http://127.0.0.1:8000/reset-password/${user._id}/${token}`
+        const link = `https://PolicyFinder.onrender.com/reset-password/${user._id}/${token}`
         console.log(link)
         // Send Email
         let info = await transporter.sendMail({
@@ -242,8 +242,10 @@ class UserController {
     const token = req.query.token;
     let user=req.user;
     let result,result2;
+
+
     await state_policyModel
-      .find({})
+      .find({ date_added: { $gt: user.last_active }})
       .then((data) => {
         if (!data) {
          console.log("NULL data")
@@ -253,8 +255,10 @@ class UserController {
         }
       })
       .catch((err) => console.log(err));
+      // db.collection.find({ date: { $gt: new Date("2023-01-01") } })
+
       await central_policyModel
-      .find({})
+      .find({ date_added: { $gt: user.last_active }})
       .then((data) => {
         if (!data) {
          console.log("NULL data")
@@ -264,6 +268,10 @@ class UserController {
         }
       })
       .catch((err) => console.log(err));
+
+var last_active =   currentDate.toLocaleDateString('en-CA');
+console.log(last_active);
+await UserModel.findByIdAndUpdate(user._id, { $set: { last_active:last_active  } })
     res.render("notification.ejs",{result,result2,token});
   }
   static userUpdate=async(req,res)=>{
